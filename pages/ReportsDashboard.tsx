@@ -13,23 +13,6 @@ interface ClassReport {
 
 const ReportsDashboard: React.FC = () => {
     const { user } = useAuth();
-
-    if (user?.role === Role.SUPER_ADMIN) {
-        return (
-            <div className="container mx-auto">
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100 mb-4 sm:mb-0">
-                        Rapports Consolidés
-                    </h1>
-                </div>
-                <div className="text-center bg-white dark:bg-slate-800 p-8 rounded-xl shadow-md">
-                    <i className="fas fa-chart-line text-4xl text-slate-400 mb-4"></i>
-                    <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">Analyses Multi-Écoles</h3>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2">Cette section est en cours de développement et affichera prochainement des rapports et des statistiques consolidées sur l'ensemble du réseau scolaire.</p>
-                </div>
-            </div>
-        );
-    }
     
     const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedClassId, setSelectedClassId] = useState<'all' | number>('all');

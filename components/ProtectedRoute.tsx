@@ -20,7 +20,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   if (!allowedRoles.includes(user.role)) {
     // Redirect to their default dashboard if they try to access a forbidden page
     let defaultPath = '/login';
-    if (user.role === Role.SUPER_ADMIN) defaultPath = '/administrator-dashboard';
     if (user.role === Role.SCHOOL_DIRECTOR) defaultPath = '/school-dashboard';
     if (user.role === Role.TEACHER) defaultPath = '/teacher-dashboard';
     

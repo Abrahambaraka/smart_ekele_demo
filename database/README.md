@@ -9,13 +9,12 @@ La base de données **smart_ekele_db** est conçue pour gérer un système compl
 ### Tables principales
 
 #### 1. **users** - Gestion des utilisateurs
-- Stocke tous les utilisateurs du système (administrateurs, directeurs, enseignants, étudiants, parents)
-- Rôles: `super_admin`, `school_director`, `teacher`, `student`, `parent`
+- Stocke tous les utilisateurs du système (directeurs, enseignants)
+- Rôles: `school_director`, `teacher`
 - Authentification par email/mot de passe hashé
 
 #### 2. **schools** - Écoles
 - Gère les informations des écoles
-- Plans d'abonnement: `basic`, `premium`, `enterprise`
 - Lien avec le directeur de l'école
 
 #### 3. **school_years** - Années scolaires
@@ -142,7 +141,6 @@ Après avoir chargé `seed_data.sql`, vous pouvez vous connecter avec :
 
 | Rôle | Email | Mot de passe (hash) |
 |------|-------|---------------------|
-| Super Admin | admin@smartekele.cd | password |
 | Directeur | director@ecole1.cd | password |
 | Enseignant | prof1@ecole1.cd | password |
 

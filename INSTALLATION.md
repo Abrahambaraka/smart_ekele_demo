@@ -99,11 +99,6 @@ npm run preview
 
 Après l'installation avec les données de test, utilisez ces comptes :
 
-### Super Administrateur
-- **Email :** `admin@smartekele.cd`
-- **Mot de passe :** `password`
-- **Rôle :** Gestion complète de toutes les écoles
-
 ### Directeur d'école
 - **Email :** `director@ecole1.cd`
 - **Mot de passe :** `password`

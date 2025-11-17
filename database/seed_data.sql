@@ -3,15 +3,14 @@
 
 -- Insert sample users
 INSERT INTO users (id, username, email, password_hash, first_name, last_name, phone, role, is_active) VALUES
-('usr-001', 'admin', 'admin@smartekele.cd', '$2b$10$xYzABCdefghijklmnopqrst', 'Super', 'Admin', '+243900000001', 'super_admin', TRUE),
 ('usr-002', 'director1', 'director@ecole1.cd', '$2b$10$xYzABCdefghijklmnopqrst', 'Jean', 'Kabongo', '+243900000002', 'school_director', TRUE),
 ('usr-003', 'teacher1', 'prof1@ecole1.cd', '$2b$10$xYzABCdefghijklmnopqrst', 'Marie', 'Tshilombo', '+243900000003', 'teacher', TRUE),
 ('usr-004', 'teacher2', 'prof2@ecole1.cd', '$2b$10$xYzABCdefghijklmnopqrst', 'Pierre', 'Mbuyi', '+243900000004', 'teacher', TRUE),
 ('usr-005', 'teacher3', 'prof3@ecole1.cd', '$2b$10$xYzABCdefghijklmnopqrst', 'Grace', 'Kalala', '+243900000005', 'teacher', TRUE);
 
 -- Insert sample school
-INSERT INTO schools (id, name, code, address, city, province, country, phone, email, director_id, subscription_plan, is_active) VALUES
-('sch-001', 'Complexe Scolaire Ekele', 'CS-EKELE-001', 'Avenue Kalemie No. 45', 'Lubumbashi', 'Haut-Katanga', 'RDC', '+243900000100', 'info@csekele.cd', 'usr-002', 'premium', TRUE);
+INSERT INTO schools (id, name, code, address, city, province, country, phone, email, director_id, is_active) VALUES
+('sch-001', 'Complexe Scolaire Ekele', 'CS-EKELE-001', 'Avenue Kalemie No. 45', 'Lubumbashi', 'Haut-Katanga', 'RDC', '+243900000100', 'info@csekele.cd', 'usr-002', TRUE);
 
 -- Insert school year
 INSERT INTO school_years (id, school_id, name, start_date, end_date, is_current) VALUES

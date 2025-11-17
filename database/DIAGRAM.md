@@ -295,11 +295,8 @@ erDiagram
 
 ### Hiérarchie des utilisateurs
 - **users** (table centrale pour tous les utilisateurs)
-  - Super Admin (gère toutes les écoles)
   - School Director (gère une école)
   - Teacher (enseigne dans une école)
-  - Student (étudie dans une école)
-  - Parent (parent d'un étudiant)
 
 ### Structure académique
 - **schools** → **school_years** → **classes** → **students**

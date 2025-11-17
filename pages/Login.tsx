@@ -173,7 +173,6 @@ const AuthForm: React.FC = () => {
   
   const handleDemoLogin = async (role: Role, event: React.MouseEvent<HTMLButtonElement>) => {
     const userCredentials = {
-        [Role.SUPER_ADMIN]: { email: 'superadmin@demo.com', pass: 'password123' },
         [Role.SCHOOL_DIRECTOR]: { email: 'directeur@demo.com', pass: 'password123' },
         [Role.TEACHER]: { email: 'professeur@demo.com', pass: 'password123' },
     };
@@ -287,11 +286,7 @@ const AuthForm: React.FC = () => {
       {!isSignUp && (
         <div className="mt-4 sm:mt-6">
           <p className="text-center text-xs text-gray-500 dark:text-gray-400 mb-2">Pour la démo, cliquez sur un rôle :</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-             <button onClick={(e) => handleDemoLogin(Role.SUPER_ADMIN, e)} type="button" className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-center text-gray-700 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 focus:ring-2 focus:outline-none focus:ring-gray-300 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-600 transition-all duration-200 transform hover:-translate-y-px">
-                <AdminIcon />
-                <span>SUPER ADMIN</span>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button onClick={(e) => handleDemoLogin(Role.SCHOOL_DIRECTOR, e)} type="button" className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-center text-gray-700 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 focus:ring-2 focus:outline-none focus:ring-gray-300 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-600 transition-all duration-200 transform hover:-translate-y-px">
                 <DirectorIcon />
                 <span>DIRECTEUR</span>

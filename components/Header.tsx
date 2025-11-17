@@ -9,13 +9,11 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
   const { user } = useAuth();
   
-  const getRoleName = (role: string | undefined) => {
-    if (!role) return '';
-    switch (role) {
-      case 'super_admin': return 'Super Administrateur';
+    const getRoleLabel = (role: string) => {
+    switch(role) {
       case 'school_director': return 'Directeur d\'École';
-      case 'teacher': return 'Professeur';
-      default: return '';
+      case 'teacher': return 'Enseignant';
+      default: return role;
     }
   };
 

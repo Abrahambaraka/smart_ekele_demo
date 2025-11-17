@@ -26,7 +26,7 @@ export interface User {
   first_name?: string;
   last_name?: string;
   phone?: string;
-  role: 'super_admin' | 'school_director' | 'teacher' | 'student' | 'parent';
+  role: 'school_director' | 'teacher';
   profile_image?: string;
   is_active: boolean;
   created_at: Date;
@@ -46,9 +46,6 @@ export interface School {
   email?: string;
   logo?: string;
   director_id?: string;
-  subscription_plan: 'basic' | 'premium' | 'enterprise';
-  subscription_start_date?: Date;
-  subscription_end_date?: Date;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;

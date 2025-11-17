@@ -8,7 +8,7 @@ Application complète de gestion scolaire pour les écoles en République Démoc
 
 ## 🌟 Fonctionnalités
 
-- ✅ Gestion des utilisateurs (Super Admin, Directeurs, Enseignants, Étudiants, Parents)
+- ✅ Gestion des utilisateurs (Directeurs, Enseignants)
 - ✅ Gestion des classes et matières
 - ✅ Suivi des présences
 - ✅ Gestion des notes et bulletins
@@ -130,7 +130,6 @@ Après l'installation avec les données de test :
 
 | Rôle | Email | Mot de passe |
 |------|-------|-------------|
-| Super Admin | admin@smartekele.cd | password |
 | Directeur | director@ecole1.cd | password |
 | Enseignant | prof1@ecole1.cd | password |
 

@@ -4,7 +4,6 @@ import { Role, User, School, Student, Class, ClassLevel, StudentStatus, Payment,
 
 // Mock Users
 export const MOCK_USERS: Record<Role, User> = {
-  [Role.SUPER_ADMIN]: { id: 1, name: 'Super Admin', email: 'superadmin@demo.com', role: Role.SUPER_ADMIN },
   [Role.SCHOOL_DIRECTOR]: { id: 2, name: 'Directeur Kabila', email: 'directeur@demo.com', role: Role.SCHOOL_DIRECTOR, schoolId: 101 },
   [Role.TEACHER]: { id: 3, name: 'Professeur Ilunga', email: 'professeur@demo.com', role: Role.TEACHER, schoolId: 101 },
 };
@@ -95,16 +94,12 @@ const NotificationIcon = () => <i className="fa-solid fa-bell w-6 h-6"></i>;
 // Navigation
 // Fix: Changed JSX.Element to React.ReactNode to resolve the "Cannot find namespace 'JSX'" error.
 export const NAVIGATION_LINKS: Record<Role, { name: string; path: string; icon: React.ReactNode }[]> = {
-  [Role.SUPER_ADMIN]: [
-    { name: 'Dashboard Global', path: '/administrator-dashboard', icon: <DashboardIcon /> },
-    { name: 'Gestion Utilisateurs', path: '/user-management', icon: <UserManagementIcon /> },
-    { name: 'Rapports consolidés', path: '/reports-dashboard', icon: <ReportsIcon /> },
-  ],
   [Role.SCHOOL_DIRECTOR]: [
     { name: 'Dashboard École', path: '/school-dashboard', icon: <SchoolIcon /> },
     { name: 'Gestion Classes', path: '/class-management', icon: <ClassIcon /> },
     { name: 'Gestion Étudiants', path: '/student-management', icon: <StudentIcon /> },
     { name: 'Gestion Financière', path: '/payment-management', icon: <PaymentIcon /> },
+    { name: 'Gestion Utilisateurs', path: '/user-management', icon: <UserManagementIcon /> },
     { name: 'Rapports École', path: '/reports-dashboard', icon: <ReportsIcon /> },
   ],
   [Role.TEACHER]: [
