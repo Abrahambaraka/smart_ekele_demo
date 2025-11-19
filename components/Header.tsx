@@ -1,6 +1,13 @@
 
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import ThemeToggle from './ThemeToggle';
+
+const getRoleName = (role: string | undefined) => {
+  if (role === 'school_director') return 'Directeur';
+  if (role === 'teacher') return 'Professeur';
+  return 'Utilisateur';
+};
 
 interface HeaderProps {
     setSidebarOpen: (open: boolean) => void;
@@ -26,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
         </div>
         <div className="flex items-center">
             <div className="hidden sm:flex flex-col items-end">
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{user?.name}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{user?.first_name} {user?.last_name}</span>
                 <span className="text-sm text-slate-500 dark:text-slate-400">{getRoleName(user?.role)}</span>
             </div>
             <img className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover ml-3" src={`https://i.pravatar.cc/150?u=${user?.email}`} alt="User avatar" />

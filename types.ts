@@ -1,14 +1,19 @@
 export enum Role {
   SCHOOL_DIRECTOR = 'school_director',
-  TEACHER = 'teacher',
+  TEACHER = 'teacher'
 }
-
 export interface User {
-  id: number;
-  name: string;
+  id: string;
+  username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
   role: Role;
-  schoolId?: number; 
+  school_id: string;
+  is_active: boolean;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface School {

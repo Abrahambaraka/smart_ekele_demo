@@ -1,45 +1,85 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User, Role } from '../types';
-import { MOCK_USERS } from '../constants';
+import { authAPI } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
-  login: (role: Role) => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  loginWithCredentials: (email: string, password: string) => boolean;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const login = (role: Role) => {
-    const userToLogin = MOCK_USERS[role];
-    if (userToLogin) {
-      setUser(userToLogin);
+  // Vérifier si l'utilisateur est déjà connecté au chargement
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await authAPI.getProfile();
+          if (response.success && response.data) {
+            setUser(response.data);
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await authAPI.login(email, password);
+      
+      if (response.success && response.data) {
+        const { token, user: userData } = response.data;
+        
+        // Sauvegarder le token et les données utilisateur
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
-  const loginWithCredentials = (email: string, password: string): boolean => {
-    // For demo purposes, any user with this password is valid
-    if (password === 'password123') {
-      const userToLogin = Object.values(MOCK_USERS).find(u => u.email === email);
-      if (userToLogin) {
-        setUser(userToLogin);
-        return true;
-      }
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
     }
-    return false;
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loginWithCredentials }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

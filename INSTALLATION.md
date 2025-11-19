@@ -16,7 +16,7 @@ cp .env.example .env
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=VOTRE_MOT_DE_PASSE_ICI
+DB_PASSWORD=root
 DB_NAME=smart_ekele_db
 ```
 

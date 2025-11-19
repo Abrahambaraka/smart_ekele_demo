@@ -148,26 +148,38 @@ const AuthForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
-  const { login, loginWithCredentials } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleToggleMode = () => {
     setIsSignUp(prev => !prev);
+    setError('');
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError('');
+    
     if (isSignUp) {
       console.log('Signing up with:', { fullName, email, password, confirmPassword });
-      // Sign-up logic would go here
       alert("La fonctionnalité d'inscription n'est pas encore implémentée.");
     } else {
-      const success = loginWithCredentials(email, password);
-      if (!success) {
-        alert('Email ou mot de passe incorrect. Assurez-vous d\'utiliser "password123" pour la démo.');
+      setIsLoading(true);
+      try {
+        const success = await login(email, password);
+        if (success) {
+          // La redirection sera gérée par AppRoutes
+        } else {
+          setError('Email ou mot de passe incorrect.');
+        }
+      } catch (err) {
+        setError('Erreur de connexion. Veuillez réessayer.');
+      } finally {
+        setIsLoading(false);
       }
-      // Successful login will trigger a redirect via the AuthContext and AppRoutes logic
     }
   };
   
@@ -179,21 +191,27 @@ const AuthForm: React.FC = () => {
 
     setEmail(userCredentials[role].email);
     setPassword(userCredentials[role].pass);
+    setError('');
     
     const button = event.currentTarget;
     const originalText = button.textContent;
     button.disabled = true;
     button.innerHTML = '<span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full inline-block"></span>&nbsp;Connexion...';
     
-    setTimeout(() => {
-        const success = loginWithCredentials(userCredentials[role].email, userCredentials[role].pass);
-        if (success) {
-            button.textContent = '✅ Connecté !';
-            // Redirect is handled by AppRoutes
-        } else {
-            button.disabled = false;
-            button.textContent = originalText;
-            alert('Erreur lors de la connexion de démo.');
+    setTimeout(async () => {
+        try {
+          const success = await login(userCredentials[role].email, userCredentials[role].pass);
+          if (success) {
+              button.textContent = '✅ Connecté !';
+          } else {
+              button.disabled = false;
+              button.textContent = originalText;
+              setError('Erreur lors de la connexion de démo.');
+          }
+        } catch (err) {
+          button.disabled = false;
+          button.textContent = originalText;
+          setError('Erreur lors de la connexion de démo.');
         }
     }, 1000);
   };
@@ -261,6 +279,12 @@ const AuthForm: React.FC = () => {
            )}
         </div>
 
+        {error && (
+          <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
         {!isSignUp && (
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -271,8 +295,15 @@ const AuthForm: React.FC = () => {
           </div>
         )}
         
-        <Button type="submit">
-          {isSignUp ? 'S\'inscrire' : 'Se connecter'}
+        <Button type="submit" className={isLoading ? 'opacity-50 cursor-not-allowed' : ''}>
+          {isLoading ? (
+            <span className="flex items-center justify-center">
+              <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+              Connexion...
+            </span>
+          ) : (
+            isSignUp ? 'S\'inscrire' : 'Se connecter'
+          )}
         </Button>
       </form>
       

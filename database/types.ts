@@ -27,6 +27,7 @@ export interface User {
   last_name?: string;
   phone?: string;
   role: 'school_director' | 'teacher';
+  school_id: string;
   profile_image?: string;
   is_active: boolean;
   created_at: Date;

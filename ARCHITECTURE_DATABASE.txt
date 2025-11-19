@@ -1,0 +1,308 @@
+================================================================================
+ARCHITECTURE - INTERACTION PAGES ↔ BASE DE DONNÉES
+================================================================================
+
+📋 VUE D'ENSEMBLE
+--------------------------------------------------------------------------------
+Smart Ekele est une application MULTI-UTILISATEURS de gestion scolaire.
+
+PRINCIPE MULTI-ÉCOLES:
+  - Chaque école possède son propre compte avec un identifiant unique (school_id)
+  - Chaque école a ses propres données (étudiants, classes, paiements, etc.)
+  - Les données d'une école sont ISOLÉES des autres écoles
+  - Les utilisateurs ne voient QUE les données de leur école
+
+HIÉRARCHIE DES RÔLES:
+  1. Director      → Gère l'école (étudiants, professeurs, classes, paiements)
+  2. Teacher       → Gère ses classes (notes, présence)
+
+ARCHITECTURE TECHNIQUE:
+  Pages (React) → API Service (Axios) → Backend (Express) → Base de données (MySQL)
+
+
+🔄 FLUX DE DONNÉES
+--------------------------------------------------------------------------------
+
+1. FRONTEND → BACKEND
+   - L'utilisateur interagit avec une page React
+   - La page appelle une fonction du service API (services/api.ts)
+   - Axios envoie une requête HTTP au backend (port 3000)
+   
+2. BACKEND → BASE DE DONNÉES
+   - Le serveur Express reçoit la requête
+   - Le routeur approprié traite la requête
+   - Le repository exécute la requête SQL sur MySQL
+   
+3. BACKEND → FRONTEND
+   - Le serveur renvoie les données en JSON
+   - Axios reçoit la réponse
+   - La page React met à jour l'état avec useState/useEffect
+
+
+📁 STRUCTURE DES FICHIERS
+--------------------------------------------------------------------------------
+
+services/api.ts
+  ├─ authAPI        → Authentification (login, getProfile)
+  ├─ studentsAPI    → Gestion des étudiants (CRUD)
+  ├─ teachersAPI    → Gestion des enseignants
+  ├─ classesAPI     → Gestion des classes
+  ├─ paymentsAPI    → Gestion des paiements
+  ├─ reportsAPI     → Statistiques et rapports
+  └─ ... (13 modules au total)
+
+server/routes/
+  ├─ auth.routes.ts      → Endpoints /api/auth/*
+  ├─ student.routes.ts   → Endpoints /api/students/*
+  ├─ payment.routes.ts   → Endpoints /api/payments/*
+  └─ ... (13 fichiers de routes)
+
+database/
+  ├─ db.ts          → Connexion MySQL + Repositories
+  ├─ schema.sql     → Structure des tables
+  └─ seed_data.sql  → Données de démonstration
+
+
+🔐 AUTHENTIFICATION & ISOLATION DES DONNÉES
+--------------------------------------------------------------------------------
+
+1. Login (pages/Login.tsx)
+   - Appelle authAPI.login(email, password)
+   - Backend vérifie le mot de passe avec bcrypt
+   - Génère un token JWT si succès
+   - Frontend stocke le token dans localStorage
+   - Le token contient: id, email, role, schoolId
+
+2. Requêtes authentifiées
+   - Axios ajoute automatiquement le token dans les headers
+   - Backend vérifie le token avec middleware auth
+   - Rejette si token invalide ou expiré
+
+3. ISOLATION DES DONNÉES PAR ÉCOLE
+   - Chaque requête filtre par school_id de l'utilisateur connecté
+   - Exemple: studentsAPI.getAll({ school_id: user.schoolId })
+   - SQL: SELECT * FROM students WHERE school_id = 1
+   - Un directeur de l'école A ne peut PAS voir les données de l'école B
+   
+4. HIÉRARCHIE D'ACCÈS
+   Director (Directeur d'école):
+     - Voit UNIQUEMENT son école (school_id = user.schoolId)
+     - Gère: étudiants, professeurs, classes, paiements, notes
+     - Peut créer des utilisateurs pour son école
+   
+   Teacher (Professeur):
+     - Voit UNIQUEMENT ses classes et ses étudiants
+     - Peut saisir notes et présences
+     - Accès limité aux données de son école
+
+
+📊 EXEMPLE CONCRET : GESTION DES ÉTUDIANTS (MULTI-ÉCOLES)
+--------------------------------------------------------------------------------
+
+SCÉNARIO: Directeur de l'école "Complexe Scolaire Ekele" (school_id = 1)
+
+pages/StudentManagement.tsx
+  ↓
+  const { user } = useAuth()  // user.schoolId = 1, user.role = "Director"
+  ↓
+  useEffect(() => fetchData())
+  ↓
+  studentsAPI.getAll({ school_id: user.schoolId })  // Filtre par école
+  ↓
+  axios.get('/api/students', { params: { school_id: 1 } })
+  ↓
+  server/routes/student.routes.ts → GET /api/students?school_id=1
+  ↓
+  database/db.ts → StudentRepository.findAll(school_id)
+  ↓
+  MySQL: SELECT * FROM students WHERE school_id = 1
+       → Retourne UNIQUEMENT les étudiants de l'école 1
+       → Les étudiants des écoles 2, 3, 4... sont EXCLUS
+  ↓
+  Retourne JSON: { success: true, data: [étudiants de l'école 1] }
+  ↓
+  setStudents(response.data)
+  ↓
+  Affichage dans le tableau React (UNIQUEMENT école 1)
+
+EXEMPLE MULTI-ÉCOLES:
+  École 1: "Complexe Scolaire Ekele"     → 150 étudiants
+  École 2: "Lycée Moderne de Kinshasa"   → 5 étudiants
+  
+  → Le directeur de l'école 1 voit UNIQUEMENT ses 150 étudiants
+  → Le directeur de l'école 2 voit UNIQUEMENT ses 5 étudiants
+  → Chaque professeur voit UNIQUEMENT les étudiants de son école
+
+
+💾 OPÉRATIONS CRUD
+--------------------------------------------------------------------------------
+
+CREATE (Ajouter)
+  Page: handleSubmit() → API: .create(data)
+  Backend: INSERT INTO table VALUES (...)
+  
+READ (Lire)
+  Page: useEffect() → API: .getAll() ou .getById(id)
+  Backend: SELECT * FROM table WHERE ...
+  
+UPDATE (Modifier)
+  Page: handleEdit() → API: .update(id, data)
+  Backend: UPDATE table SET ... WHERE id = ?
+  
+DELETE (Supprimer)
+  Page: handleDelete() → API: .delete(id)
+  Backend: DELETE FROM table WHERE id = ?
+
+
+🔍 FILTRAGE ET RECHERCHE
+--------------------------------------------------------------------------------
+
+Exemple: PaymentManagement
+  - Frontend: filter par status, search par nom étudiant
+  - Filtrage côté client après récupération des données
+  - Optimisation possible: filtrage côté serveur avec query params
+
+
+📈 RAPPORTS ET STATISTIQUES
+--------------------------------------------------------------------------------
+
+pages/SchoolDirectorDashboard.tsx
+  ↓
+  reportsAPI.getComprehensive(school_id)
+  ↓
+  Backend exécute plusieurs requêtes SQL avec JOIN et COUNT
+  ↓
+  Retourne statistiques agrégées (total étudiants, paiements, etc.)
+
+
+⚙️ CONFIGURATION
+--------------------------------------------------------------------------------
+
+.env (Backend)
+  DB_HOST=localhost
+  DB_USER=root
+  DB_PASSWORD=root
+  DB_NAME=smart_ekele_db
+
+.env.local (Frontend)
+  VITE_API_URL=http://localhost:3000/api
+
+Ports:
+  - Backend: http://localhost:3000
+  - Frontend: http://localhost:5173
+
+
+🛡️ SÉCURITÉ
+--------------------------------------------------------------------------------
+
+1. Mots de passe hashés avec bcrypt (10 rounds)
+2. Tokens JWT avec expiration
+3. Middleware d'authentification sur routes protégées
+4. CORS configuré pour accepter localhost:5173
+5. Validation des données côté serveur
+
+
+📦 DÉPENDANCES CLÉS
+--------------------------------------------------------------------------------
+
+Frontend:
+  - axios: Client HTTP pour appeler l'API
+  - react: Interface utilisateur
+  
+Backend:
+  - express: Serveur web
+  - mysql2: Connexion à MySQL
+  - jsonwebtoken: Authentification JWT
+  - bcrypt: Hashage des mots de passe
+  - dotenv: Variables d'environnement
+
+
+🚀 DÉMARRAGE
+--------------------------------------------------------------------------------
+
+1. Base de données:
+   mysql -u root -p
+   CREATE DATABASE smart_ekele_db;
+   SOURCE database/schema.sql;
+
+2. Backend:
+   npm run server:dev
+   → Serveur démarre sur port 3000
+
+3. Frontend:
+   npm run dev
+   → Application démarre sur port 5173
+
+4. Test:
+   Login: directeur@demo.com / password123
+
+
+📝 NOTES IMPORTANTES
+--------------------------------------------------------------------------------
+
+- Toutes les pages utilisent le même pattern: useState + useEffect + API calls
+- Les données sont chargées au montage du composant
+- Le loading state affiche un spinner pendant les requêtes
+- Les erreurs sont gérées avec try/catch et alert()
+- schoolId vient de l'utilisateur connecté (user.schoolId)
+- Le token JWT est automatiquement ajouté par axios interceptor
+
+🏫 GESTION MULTI-ÉCOLES
+--------------------------------------------------------------------------------
+
+TABLES PRINCIPALES:
+  schools         → Liste de toutes les écoles
+  users           → Utilisateurs (avec school_id)
+  students        → Étudiants (avec school_id)
+  teachers        → Professeurs (avec school_id)
+  classes         → Classes (avec school_id)
+  payments        → Paiements (avec school_id via students)
+  grades          → Notes (avec school_id via classes)
+  attendance      → Présences (avec school_id via classes)
+  
+RELATIONS:
+  1 École → N Utilisateurs (directeurs, professeurs)
+  1 École → N Étudiants
+  1 École → N Professeurs
+  1 École → N Classes
+  1 Directeur → Gère 1 École
+  1 Professeur → Enseigne dans 1 École, a N Classes
+
+EXEMPLES DE DONNÉES:
+  
+  École 1: Complexe Scolaire Ekele (school_id = sch-001)
+    - Directeur: directeur@demo.com (password: password123)
+    - Professeurs: professeur@demo.com (password: password123)
+    - Étudiants: 150 élèves
+    - Classes: CP1, CP2, CE1, CE2, CM1, CM2
+  
+  École 2: Lycée Moderne de Kinshasa (school_id = sch-002)
+    - Directeur: directeur.lycee@smartekele.com (password: admin123)
+    - Professeur: prof.lycee@smartekele.com (password: admin123)
+    - Étudiants: 5 élèves
+    - Classes: 6ème A, 5ème B, Terminale Scientifique
+
+FLUX TYPIQUE D'UN DIRECTEUR:
+  1. Login avec directeur@demo.com
+  2. AuthContext récupère user.schoolId = 1
+  3. Toutes les requêtes incluent school_id = 1
+  4. Voit UNIQUEMENT les données de son école
+  5. Peut gérer: étudiants, professeurs, classes, paiements
+  6. Ne peut PAS voir les données d'autres écoles
+
+FLUX TYPIQUE D'UN PROFESSEUR:
+  1. Login avec professeur@demo.com
+  2. AuthContext récupère user.schoolId = 1
+  3. TeacherDashboard trouve le professeur via email
+  4. Charge les classes assignées au professeur
+  5. Peut saisir notes et présences UNIQUEMENT pour ses classes
+  6. Voit UNIQUEMENT les étudiants de ses classes
+
+SÉCURITÉ MULTI-ÉCOLES:
+  ✓ Filtrage automatique par school_id dans toutes les requêtes
+  ✓ Validation côté serveur du school_id de l'utilisateur
+  ✓ Impossibilité d'accéder aux données d'une autre école
+  ✓ Token JWT contient le school_id pour vérification
+  ✓ Middleware auth vérifie les permissions par rôle
+
+================================================================================

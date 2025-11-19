@@ -1,107 +1,330 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { teachersAPI, classesAPI, gradesAPI, attendanceAPI, studentsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import DashboardCard from '../components/DashboardCard';
-import { MOCK_CLASSES, MOCK_EVENTS } from '../constants';
 
-/**
- * Composant principal pour le tableau de bord de l'enseignant.
- * Affiche un aperçu des classes, des statistiques clés et des événements à venir.
- */
 const TeacherDashboard: React.FC = () => {
-  const { user } = useAuth();
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [teacher, setTeacher] = useState<any>(null);
+    const [classes, setClasses] = useState<any[]>([]);
+    const [selectedClass, setSelectedClass] = useState<any>(null);
+    const [students, setStudents] = useState<any[]>([]);
+    const [showGradeModal, setShowGradeModal] = useState(false);
+    const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
-  // Filtre les données pour n'afficher que celles pertinentes à l'enseignant connecté.
-  const teacherClasses = MOCK_CLASSES.filter(c => c.teacherId === user?.id);
-  const studentCount = teacherClasses.reduce((sum, cls) => sum + cls.studentCount, 0);
+    const [gradeForm, setGradeForm] = useState({
+        student_id: '',
+        subject_id: '',
+        grade_type: 'Quiz',
+        score: '',
+        max_score: '100'
+    });
 
-  // Données factices pour la démonstration du taux de présence moyen.
-  const averageAttendance = "94%";
+    const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
 
-  return (
-    <div className="container mx-auto animate-fade-in">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2 text-slate-800 dark:text-slate-100">Tableau de Bord du Professeur</h1>
-        <p className="mb-6 text-slate-600 dark:text-slate-400">Bienvenue, {user?.name}. Voici un aperçu de vos activités.</p>
-        
-        {/* Cartes de statistiques rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-            <DashboardCard title="Classes Assignées" value={teacherClasses.length} icon={<i className="fas fa-chalkboard"></i>} color="bg-gradient-to-br from-blue-400 to-blue-600" />
-            <DashboardCard title="Total d'Élèves" value={studentCount} icon={<i className="fas fa-users"></i>} color="bg-gradient-to-br from-green-400 to-green-600" />
-            <DashboardCard title="Présence Moyenne" value={averageAttendance} icon={<i className="fas fa-user-check"></i>} color="bg-gradient-to-br from-purple-400 to-purple-600" />
-        </div>
+    useEffect(() => {
+        fetchTeacherData();
+    }, []);
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+    useEffect(() => {
+        if (selectedClass) {
+            fetchClassStudents(selectedClass.id);
+        }
+    }, [selectedClass]);
+
+    const fetchTeacherData = async () => {
+        try {
+            setLoading(true);
+            const teachersRes = await teachersAPI.getAll({ school_id: user?.schoolId?.toString() });
             
-            {/* Section principale contenant la liste des classes et les raccourcis */}
-            <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-xl shadow-md">
-                    <h2 className="text-lg md:text-xl font-semibold mb-4">Mes Classes</h2>
+            if (teachersRes.success) {
+                const teacherData = teachersRes.data?.find((t: any) => t.email === user?.email);
+                setTeacher(teacherData);
+                
+                if (teacherData) {
+                    const classesRes = await classesAPI.getAll({ teacher_id: teacherData.id.toString() });
+                    if (classesRes.success) {
+                        setClasses(classesRes.data || []);
+                        if (classesRes.data && classesRes.data.length > 0) {
+                            setSelectedClass(classesRes.data[0]);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchClassStudents = async (classId: number) => {
+        try {
+            const response = await studentsAPI.getAll({ class_id: classId.toString() });
+            if (response.success) {
+                setStudents(response.data || []);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    };
+
+    const handleSubmitGrade = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await gradesAPI.create({
+                ...gradeForm,
+                student_id: parseInt(gradeForm.student_id),
+                subject_id: parseInt(gradeForm.subject_id),
+                score: parseFloat(gradeForm.score),
+                max_score: parseFloat(gradeForm.max_score),
+                class_id: selectedClass.id,
+                academic_year: selectedClass.academic_year
+            });
+            
+            if (response.success) {
+                alert('Note enregistrée avec succès');
+                setShowGradeModal(false);
+                setGradeForm({ student_id: '', subject_id: '', grade_type: 'Quiz', score: '', max_score: '100' });
+            }
+        } catch (error) {
+            alert('Erreur lors de l\'enregistrement de la note');
+        }
+    };
+
+    const handleMarkAttendance = async (studentId: number, status: string) => {
+        try {
+            const response = await attendanceAPI.create({
+                student_id: studentId,
+                class_id: selectedClass.id,
+                attendance_date: attendanceDate,
+                status
+            });
+            
+            if (response.success) {
+                alert('Présence enregistrée');
+            }
+        } catch (error) {
+            alert('Erreur lors de l\'enregistrement de la présence');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+            </div>
+        );
+    }
+
+    if (!teacher) {
+        return (
+            <div className="p-6">
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4">
+                    Aucune donnée d'enseignant trouvée pour cet utilisateur.
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 p-6">
+            <div>
+                <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Tableau de Bord Enseignant</h1>
+                <p className="text-slate-600 dark:text-slate-400">Bienvenue, {teacher.first_name} {teacher.last_name}</p>
+            </div>
+
+            {/* Teacher Info */}
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4">Informations</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Spécialité</p>
+                        <p className="font-semibold">{teacher.specialization || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Email</p>
+                        <p className="font-semibold">{teacher.email}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Classes</p>
+                        <p className="font-semibold">{classes.length}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Class Selector */}
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+                <label className="block text-sm font-medium mb-2">Sélectionner une classe</label>
+                <select 
+                    value={selectedClass?.id || ''}
+                    onChange={(e) => setSelectedClass(classes.find(c => c.id === parseInt(e.target.value)))}
+                    className="w-full md:w-auto px-4 py-2 border rounded-md dark:bg-slate-700"
+                    aria-label="Sélectionner une classe"
+                >
+                    {classes.map(cls => (
+                        <option key={cls.id} value={cls.id}>{cls.class_name} - {cls.level}</option>
+                    ))}
+                </select>
+            </div>
+
+            {selectedClass && (
+                <>
+                    {/* Quick Actions */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {teacherClasses.map(cls => (
-                             <div key={cls.id} className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg flex items-center justify-between">
+                        <button onClick={() => setShowGradeModal(true)} className="px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold">
+                            📝 Saisir des Notes
+                        </button>
+                        <button onClick={() => setShowAttendanceModal(true)} className="px-6 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold">
+                            ✓ Marquer la Présence
+                        </button>
+                    </div>
+
+                    {/* Students List */}
+                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+                        <h2 className="text-xl font-bold mb-4">Étudiants de {selectedClass.class_name}</h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead className="bg-slate-50 dark:bg-slate-900">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nom</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                    {students.map(student => (
+                                        <tr key={student.id}>
+                                            <td className="px-6 py-4">{student.first_name} {student.last_name}</td>
+                                            <td className="px-6 py-4">{student.email || 'N/A'}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                                    student.enrollment_status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {student.enrollment_status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Grade Modal */}
+            {showGradeModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
+                        <h2 className="text-xl font-bold mb-4">Saisir une Note</h2>
+                        <form onSubmit={handleSubmitGrade} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Étudiant</label>
+                                <select 
+                                    value={gradeForm.student_id}
+                                    onChange={(e) => setGradeForm({...gradeForm, student_id: e.target.value})}
+                                    required
+                                    className="w-full px-3 py-2 border rounded-md dark:bg-slate-700"
+                                    aria-label="Sélectionner un étudiant"
+                                >
+                                    <option value="">Sélectionner un étudiant</option>
+                                    {students.map(s => (
+                                        <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Type d'évaluation</label>
+                                <select 
+                                    value={gradeForm.grade_type}
+                                    onChange={(e) => setGradeForm({...gradeForm, grade_type: e.target.value})}
+                                    className="w-full px-3 py-2 border rounded-md dark:bg-slate-700"
+                                    aria-label="Type d'évaluation"
+                                >
+                                    <option value="Quiz">Quiz</option>
+                                    <option value="Exam">Examen</option>
+                                    <option value="Assignment">Devoir</option>
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <p className="font-bold text-slate-800 dark:text-slate-100">{cls.name}</p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">{cls.level}</p>
+                                    <label className="block text-sm font-medium mb-1">Note</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        value={gradeForm.score}
+                                        onChange={(e) => setGradeForm({...gradeForm, score: e.target.value})}
+                                        required
+                                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-700"
+                                        aria-label="Note obtenue"
+                                    />
                                 </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-lg text-brand-primary dark:text-blue-400">{cls.studentCount}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">élèves</p>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Sur</label>
+                                    <input 
+                                        type="number" 
+                                        value={gradeForm.max_score}
+                                        onChange={(e) => setGradeForm({...gradeForm, max_score: e.target.value})}
+                                        required
+                                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-700"
+                                        aria-label="Note maximale"
+                                    />
                                 </div>
                             </div>
-                        ))}
-                        {/* Affiche un message si l'enseignant n'a pas de classes assignées */}
-                         {teacherClasses.length === 0 && <p className="text-slate-500 dark:text-slate-400 md:col-span-2">Aucune classe ne vous est assignée pour le moment.</p>}
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-xl shadow-md">
-                    <h2 className="text-lg md:text-xl font-semibold mb-4">Raccourcis Rapides</h2>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Link to="/reports-dashboard" className="flex flex-col items-center justify-center p-4 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                            <i className="fas fa-calendar-check text-2xl text-green-500 mb-2"></i>
-                            <span className="font-semibold text-slate-700 dark:text-slate-200">Prendre les présences</span>
-                        </Link>
-                         <Link to="/notification-center" className="flex flex-col items-center justify-center p-4 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                            <i className="fas fa-paper-plane text-2xl text-blue-500 mb-2"></i>
-                            <span className="font-semibold text-slate-700 dark:text-slate-200">Envoyer une communication</span>
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
-            {/* Section latérale affichant les événements à venir */}
-            <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-xl shadow-md">
-                <h2 className="text-lg md:text-xl font-semibold mb-4">Prochains Événements</h2>
-                <div className="space-y-4">
-                    {MOCK_EVENTS.map(event => {
-                        const eventDate = new Date(event.date + 'T' + event.time);
-                        const day = eventDate.toLocaleDateString('fr-FR', { day: '2-digit' });
-                        const month = eventDate.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
-
-                        return (
-                            <div key={event.id} className="flex items-center">
-                                <div className="flex flex-col items-center justify-center bg-brand-primary text-white font-bold w-12 h-12 rounded-lg mr-4 flex-shrink-0">
-                                    <span className="text-sm -mb-1">{month}</span>
-                                    <span className="text-xl">{day}</span>
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200">{event.title}</p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        <i className="far fa-clock mr-1"></i>{event.time}
-                                        {event.class && <span className="ml-2"><i className="fas fa-chalkboard mr-1"></i>{event.class}</span>}
-                                    </p>
-                                </div>
+                            <div className="flex justify-end space-x-3">
+                                <button type="button" onClick={() => setShowGradeModal(false)} className="px-4 py-2 bg-slate-200 rounded-md">
+                                    Annuler
+                                </button>
+                                <button type="submit" className="px-4 py-2 bg-brand-primary text-white rounded-md">
+                                    Enregistrer
+                                </button>
                             </div>
-                        )
-                    })}
-                    {/* Affiche un message si aucun événement n'est programmé */}
-                     {MOCK_EVENTS.length === 0 && <p className="text-slate-500 dark:text-slate-400">Aucun événement à venir.</p>}
+                        </form>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Attendance Modal */}
+            {showAttendanceModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-2xl">
+                        <h2 className="text-xl font-bold mb-4">Marquer la Présence</h2>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-1">Date</label>
+                            <input 
+                                type="date" 
+                                value={attendanceDate}
+                                onChange={(e) => setAttendanceDate(e.target.value)}
+                                className="px-3 py-2 border rounded-md dark:bg-slate-700"
+                                aria-label="Date de présence"
+                            />
+                        </div>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {students.map(student => (
+                                <div key={student.id} className="flex justify-between items-center p-3 border rounded-lg dark:border-slate-700">
+                                    <span>{student.first_name} {student.last_name}</span>
+                                    <div className="space-x-2">
+                                        <button onClick={() => handleMarkAttendance(student.id, 'Present')} className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">
+                                            Présent
+                                        </button>
+                                        <button onClick={() => handleMarkAttendance(student.id, 'Absent')} className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                                            Absent
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <button onClick={() => setShowAttendanceModal(false)} className="px-4 py-2 bg-slate-200 rounded-md">
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-    </div>
-  );
+    );
 };
 
 export default TeacherDashboard;

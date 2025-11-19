@@ -1,4 +1,8 @@
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+// Charger les variables d'environnement
+dotenv.config();
 
 // Configuration de la connexion à la base de données
 const dbConfig = {
@@ -13,6 +17,13 @@ const dbConfig = {
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
 };
+
+console.log('🔍 DB Config:', {
+  host: dbConfig.host,
+  user: dbConfig.user,
+  database: dbConfig.database,
+  hasPassword: !!dbConfig.password
+});
 
 // Créer le pool de connexions
 const pool = mysql.createPool(dbConfig);
