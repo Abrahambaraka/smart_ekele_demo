@@ -1,0 +1,150 @@
+model Enrollment {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  classId   String
+  classRef  Class    @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([schoolId, studentId, classId])
+  @@index([schoolId])
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  TEACHER
+  PARENT
+}
+
+model School {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  students       Student[]
+  teachers       Teacher[]
+  classes        Class[]
+  pages          Page[]
+  forms          Form[]
+  FormSubmission FormSubmission[]
+  Enrollment     Enrollment[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id])
+  email        String
+  name         String?
+  passwordHash String?
+  role         Role     @default(STAFF)
+  createdAt    DateTime @default(now())
+
+  @@unique([schoolId, email])
+  @@index([schoolId])
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  title     String
+  path      String // ex: "/students"
+  content   Json? // structure HTML/Markdown or blocks
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, path])
+  @@index([schoolId])
+}
+
+model Form {
+  id             String           @id @default(uuid())
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  name           String
+  fields         Json // array of field definitions { name, type, required, ... }
+  createdAt      DateTime         @default(now())
+  FormSubmission FormSubmission[]
+
+  @@index([schoolId])
+}
+
+model FormSubmission {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id])
+  formId      String
+  form        Form     @relation(fields: [formId], references: [id])
+  submittedBy String? // user id
+  data        Json
+  createdAt   DateTime @default(now())
+
+  @@index([schoolId])
+}
+
+model Student {
+  id         String       @id @default(uuid())
+  schoolId   String
+  school     School       @relation(fields: [schoolId], references: [id])
+  firstName  String
+  lastName   String
+  dob        DateTime?
+  metadata   Json?
+  createdAt  DateTime     @default(now())
+  Enrollment Enrollment[]
+
+  @@index([schoolId])
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  firstName String
+  lastName  String
+  subject   String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([schoolId])
+}
+
+model Class {
+  id         String       @id @default(uuid())
+  schoolId   String
+  school     School       @relation(fields: [schoolId], references: [id])
+  name       String
+  schedule   Json?
+  createdAt  DateTime     @default(now())
+  Enrollment Enrollment[]
+
+  @@index([schoolId])
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  classId   String
+  classRef  Class    @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([schoolId, studentId, classId])
+  @@index([schoolId])
+}

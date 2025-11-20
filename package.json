@@ -3,16 +3,26 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "format": "prettier --write .",
+    "ci": "npm ci && npm run lint && npm run typecheck && npm run test && npm run build",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
     "server:dev": "nodemon --exec tsx server/index.ts",
     "server:start": "tsx server/index.ts",
     "db:install": "node database/install.bat",
-    "db:backup": "mysqldump -u root -p smart_ekele_db > database/backups/backup_$(date +%Y%m%d_%H%M%S).sql"
+    "db:backup": "mysqldump -u root -p smart_ekele_db > database/backups/backup_$(Get-Date -Format yyyyMMdd_HHmmss).sql"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "axios": "^1.13.2",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -30,16 +40,33 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^1.4.12",
-    "@types/node": "^22.14.0",
+    "@types/node": "^22.19.1",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "nodemon": "^3.1.7",
+    "prisma": "^6.19.0",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.6",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abrahambaraka/smart_ekele_demo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Abrahambaraka/smart_ekele_demo/issues"
+  },
+  "homepage": "https://github.com/Abrahambaraka/smart_ekele_demo#readme",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Smart Ekele school management application"
 }
